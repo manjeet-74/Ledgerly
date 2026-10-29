@@ -10,7 +10,7 @@
 services:
   - type: web
     name: ledgerly-api
-    runtime: node
+    env: node
     plan: free          # spins down after 15 min idle; upgrade to starter ($7/mo) for always-on
     region: oregon
     rootDir: .
