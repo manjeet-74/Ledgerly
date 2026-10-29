@@ -1,5 +1,3 @@
 {
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm --filter @ledgerly/shared build && pnpm --filter @ledgerly/web build",
-  "outputDirectory": "apps/web/.next"
+  "installCommand": "pnpm install"
 }

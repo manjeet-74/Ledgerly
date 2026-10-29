@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "pnpm --filter @ledgerly/shared build && next build",
     "start": "next start",
     "lint": "next lint",
     "optimize-images": "tsx scripts/optimize-images.ts"
