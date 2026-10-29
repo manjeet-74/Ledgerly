@@ -1,0 +1,43 @@
+# OS / filesystem noise (external drive AppleDouble files)
+._*
+.DS_Store
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# Prisma
+apps/api/prisma/migrations/dev.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Learning notes — personal, not for the repo
+LEARNING_NOTES.md
+
+# Reference repo cloned for pattern-reuse only, not part of this build
+ET-AI/
