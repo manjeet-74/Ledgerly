@@ -1,0 +1,60 @@
+# Render deployment for Ledgerly API
+#
+# External services you need to provision first (both free):
+#   PostgreSQL → neon.tech  (free tier, no expiry)
+#   Redis      → upstash.com  (free tier, 10k commands/day)
+#
+# After provisioning, paste their connection strings into the Render
+# environment variables below (or via the Render dashboard).
+
+services:
+  - type: web
+    name: ledgerly-api
+    runtime: node
+    plan: free          # spins down after 15 min idle; upgrade to starter ($7/mo) for always-on
+    region: oregon
+    rootDir: .
+
+    buildCommand: >
+      pnpm install &&
+      pnpm --filter @ledgerly/shared build &&
+      pnpm --filter @ledgerly/api exec prisma generate &&
+      pnpm --filter @ledgerly/api build
+
+    startCommand: >
+      node -e "
+        const { execSync } = require('child_process');
+        execSync('npx prisma migrate deploy', { cwd: 'apps/api', stdio: 'inherit' });
+      " &&
+      node apps/api/dist/main.js
+
+    healthCheckPath: /health
+
+    envVars:
+      # --- Database (Neon / any Postgres) ---
+      - key: DATABASE_URL
+        sync: false       # paste your Neon connection string in the Render dashboard
+
+      # --- Redis (Upstash) ---
+      - key: REDIS_URL
+        sync: false       # paste your Upstash Redis URL in the Render dashboard
+
+      # --- Auth ---
+      - key: JWT_SECRET
+        generateValue: true   # Render generates a random secret automatically
+      - key: JWT_EXPIRES_IN
+        value: 8h
+
+      # --- CORS: set to your Vercel URL once deployed ---
+      - key: WEB_ORIGIN
+        value: https://ledgerly.vercel.app   # update after Vercel deploy
+
+      # --- LLM (at least one recommended; both optional) ---
+      - key: GOOGLE_AI_API_KEY
+        sync: false       # aistudio.google.com — free
+      - key: ANTHROPIC_API_KEY
+        sync: false       # optional fallback
+
+      # --- Data ingest key (protects POST /data/ingest) ---
+      - key: INGEST_API_KEY
+        generateValue: true

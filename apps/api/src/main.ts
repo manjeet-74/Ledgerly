@@ -11,7 +11,7 @@ async function bootstrap(): Promise<void> {
   app.enableCors({ origin: process.env.WEB_ORIGIN ?? 'http://localhost:3000' });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
 
-  const port = process.env.API_PORT ?? 4000;
+  const port = process.env.PORT ?? process.env.API_PORT ?? 4000;
   await app.listen(port);
   // eslint-disable-next-line no-console
   console.log(`Ledgerly API listening on :${port}`);
