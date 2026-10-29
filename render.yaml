@@ -15,18 +15,9 @@ services:
     region: oregon
     rootDir: .
 
-    buildCommand: >
-      pnpm install &&
-      pnpm --filter @ledgerly/shared build &&
-      pnpm --filter @ledgerly/api exec prisma generate &&
-      pnpm --filter @ledgerly/api build
+    buildCommand: "pnpm install && pnpm --filter @ledgerly/shared build && pnpm --filter @ledgerly/api exec prisma generate && pnpm --filter @ledgerly/api build"
 
-    startCommand: >
-      node -e "
-        const { execSync } = require('child_process');
-        execSync('npx prisma migrate deploy', { cwd: 'apps/api', stdio: 'inherit' });
-      " &&
-      node apps/api/dist/main.js
+    startCommand: "pnpm --filter @ledgerly/api exec prisma migrate deploy && node apps/api/dist/main.js"
 
     healthCheckPath: /health
 
