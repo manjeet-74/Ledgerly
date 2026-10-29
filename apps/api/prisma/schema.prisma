@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Workspace {
+  DEMO
+  LIVE
+}
+
+enum Role {
+  ADMIN
+  MARKETING_DIRECTOR
+  FINANCE
+  EXECUTOR
+  AUDITOR
+  VIEWER
+}
+
+enum DecisionType {
+  BUDGET_SHIFT
+  ANOMALY_ALERT
+}
+
+enum DecisionStatus {
+  PENDING_REVIEW
+  APPROVED
+  LIVE
+  COMPLETED
+  REJECTED
+  ROLLED_BACK
+}
+
+enum EvidenceKind {
+  DATA
+  MODEL
+  RULE
+  CALC
+}
+
+enum StepStatus {
+  PASS
+  FAIL
+  INFO
+}
+
+enum ApprovalStep {
+  MARKETING
+  FINANCE
+  EXECUTIVE
+}
+
+enum ApprovalResult {
+  PENDING
+  GRANTED
+  REJECTED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      Role
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model MetricRow {
+  id          String    @id @default(uuid())
+  workspace   Workspace
+  date        DateTime  @db.Date
+  channel     String
+  spend       Decimal   @db.Decimal(14, 2)
+  revenue     Decimal   @db.Decimal(14, 2)
+  impressions Int       @default(0)
+  clicks      Int       @default(0)
+  conversions Int       @default(0)
+  uploadId    String?
+
+  @@unique([workspace, date, channel])
+  @@index([workspace, date])
+}
+
+model Upload {
+  id        String    @id @default(uuid())
+  workspace Workspace
+  filename  String
+  rowsOk    Int
+  rowsBad   Int
+  errors    Json
+  createdBy String
+  createdAt DateTime  @default(now())
+}
+
+model Decision {
+  id             String         @id @default(uuid())
+  workspace      Workspace
+  type           DecisionType
+  title          String
+  summary        String
+  status         DecisionStatus @default(PENDING_REVIEW)
+  expectedImpact Decimal        @db.Decimal(14, 2)
+  confidence     Float
+  priorityScore  Float
+  params         Json
+  spendCap       Decimal?       @db.Decimal(14, 2)
+  rollbackRule   Json?
+  owner          String
+  deadline       DateTime
+  createdAt      DateTime       @default(now())
+  executedAt     DateTime?
+  evidence       EvidenceStep[]
+  approvals      Approval[]
+  outcome        Outcome?
+
+  @@index([workspace, status])
+}
+
+model EvidenceStep {
+  id         String       @id @default(uuid())
+  decisionId String
+  decision   Decision     @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  order      Int
+  kind       EvidenceKind
+  title      String
+  detail     String
+  status     StepStatus
+  payload    Json
+}
+
+model Approval {
+  id         String         @id @default(uuid())
+  decisionId String
+  decision   Decision       @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  step       ApprovalStep
+  order      Int
+  result     ApprovalResult @default(PENDING)
+  actorName  String?
+  actorRole  Role?
+  comment    String?
+  decidedAt  DateTime?
+
+  @@unique([decisionId, step])
+}
+
+model Outcome {
+  id               String   @id @default(uuid())
+  decisionId       String   @unique
+  decision         Decision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  promised         Decimal  @db.Decimal(14, 2)
+  delivered        Decimal  @db.Decimal(14, 2)
+  confidenceBefore Float
+  confidenceAfter  Float
+  note             String
+  recordedAt       DateTime @default(now())
+}
+
+model Policy {
+  id        String    @id @default(uuid())
+  workspace Workspace
+  name      String
+  tiers     Json
+  engine    Json
+  updatedAt DateTime  @updatedAt
+
+  @@unique([workspace])
+}
+
+model AuditEvent {
+  id         String    @id @default(uuid())
+  workspace  Workspace
+  seq        Int
+  type       String
+  actorName  String
+  actorRole  String
+  decisionId String?
+  message    String
+  data       Json
+  prevHash   String
+  hash       String
+  createdAt  DateTime  @default(now())
+
+  @@unique([workspace, seq])
+  @@index([workspace, decisionId])
+}
