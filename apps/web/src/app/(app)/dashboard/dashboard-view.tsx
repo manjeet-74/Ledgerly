@@ -1,8 +1,10 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
+import { useMode } from '@/lib/mode';
 import { pageFadeRise } from '@/lib/motion';
 import { StatCards, type DecisionStats } from '@/components/dashboard/stat-cards';
 import { DecisionQueue, type QueueDecision } from '@/components/dashboard/decision-queue';
@@ -14,6 +16,20 @@ interface DataSummary {
 }
 
 export function DashboardView() {
+  const { workspace } = useMode();
+  const qc = useQueryClient();
+  const [resetting, setResetting] = useState(false);
+
+  async function handleResetDemo() {
+    setResetting(true);
+    try {
+      await apiFetch('/workspace/demo/reset', { method: 'POST' });
+      await qc.invalidateQueries();
+    } finally {
+      setResetting(false);
+    }
+  }
+
   const statsQuery = useQuery({
     queryKey: ['decisions', 'stats'],
     queryFn: () => apiFetch<DecisionStats>('/decisions/stats'),
@@ -37,9 +53,20 @@ export function DashboardView() {
 
   return (
     <motion.div initial="hidden" animate="visible" variants={pageFadeRise} className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Dashboard</h1>
-        <p className="mt-1 text-sm text-text-dim">Live state of the decision engine and its audit trail.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Dashboard</h1>
+          <p className="mt-1 text-sm text-text-dim">Live state of the decision engine and its audit trail.</p>
+        </div>
+        {workspace === 'DEMO' && (
+          <button
+            onClick={handleResetDemo}
+            disabled={resetting}
+            className="shrink-0 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text-dim transition hover:text-text disabled:opacity-50"
+          >
+            {resetting ? 'Seeding…' : '↺ Reset demo data'}
+          </button>
+        )}
       </div>
 
       <StatCards stats={statsQuery.data} />
