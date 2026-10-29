@@ -19,8 +19,6 @@ services:
 
     startCommand: "pnpm --filter @ledgerly/api exec prisma migrate deploy && node apps/api/dist/main.js"
 
-    healthCheckPath: /health
-
     envVars:
       # --- Database (Neon / any Postgres) ---
       - key: DATABASE_URL
